@@ -8,12 +8,12 @@ version = "0.1.0"
 description = "REST service for managing modules"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115,<1",
+    "fastapi>=0.133,<1",
     "pydantic-settings>=2.8,<3",
     "pymysql[rsa]>=1.1,<2",
     "sqlalchemy>=2.0,<3",
     "uvicorn[standard]>=0.34,<1",
-    "prometheus-fastapi-instrumentator>=7.0,<8",
+    "prometheus-fastapi-instrumentator>=8.0.1,<9",
 ]
 
 [project.optional-dependencies]
