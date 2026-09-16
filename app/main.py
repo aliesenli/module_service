@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api import router
 from app.config import get_settings
@@ -17,6 +18,13 @@ app = FastAPI(
     version=settings.app_version,
 )
 app.include_router(router)
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
 
 
 @app.exception_handler(HTTPException)

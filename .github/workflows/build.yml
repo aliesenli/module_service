@@ -1,0 +1,59 @@
+name: Build and Push Module Service
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push module-service image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/module-service:${{ github.sha }}
+
+  update-ops:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout ops repo
+        uses: actions/checkout@v4
+        with:
+          repository: aliesenli/user_mgmt_service_ops
+          token: ${{ secrets.OPS_REPO_TOKEN }}
+
+      - name: Install yq
+        run: |
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          chmod +x /usr/local/bin/yq
+
+      - name: Update module-service image tag
+        run: |
+          yq e ".moduleService.image.tag = \"${{ github.sha }}\"" -i helm/values.yaml
+
+      - name: Commit and push updated tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add helm/values.yaml
+          git commit -m "ci: update module-service image tag to ${{ github.sha }}"
+          git push
